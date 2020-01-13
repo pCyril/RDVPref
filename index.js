@@ -1,56 +1,90 @@
 var casper = require('casper').create({
    viewportSize: {width: 1280, height: 1000}
 });
-var $ = require('jquery');
+
 var x = require('casper').selectXPath;
-var title;
-var elements;
+
+
+casper.userAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36');
+
 casper.start('https://rdv-etrangers-94.interieur.gouv.fr/eAppointmentpref94/element/jsp/specific/pref94.jsp' ,function(){
       // attends le charge
       this.waitForSelector('form[action="javascript:coin()"]');
-   });
-casper.then(function() {
-    // rempli le champ de l'adresse
+});
+
+
+casper.waitForSelector('form.form-horizontal', function() {
     this.fill('form.form-horizontal', { CP: '94200' }, true);
- });
+});
+
 casper.then(function(){
    this.click(x('//*[@id="pane3"]/div[2]/div/div[3]/div[2]/div[1]/input'));
 })
+
 casper.then(function(){
    this.click(x('//*[@id="nextButtonId"]'));
 })
+
 casper.then(function(){
-   this.waitForSelector("#calendarImgId");
+    casper.evaluate(function() {
+        openJqueryCal(true);
+    });
 })
-casper.then(function(){
-   this.click("#dayValueId");
-})
-casper.then(function(){
-   this.waitForSelector("#ui-datepicker-div")
-})
-// casper.then(function(){
-//    elements = this.getHTML('a')
-//    })
-casper.then(function(){
-   if(this.exists('div.title')){
-      title =  this.getHTML('div.title');
-   }
-   this.echo(title);
-   this.echo(elements);
-   this.capture('prefecture.png', {
-      top: 100,
-      left: 100,
-      width: 1200,
-      height: 800
-  });
-})
-casper.run(function(){
-     if(title != null){
-       this.echo(title)
-       this.echo()
-       return console.log("j'ai tout affiche");
-     }
-     else{
-        console.log("je n'ai rien trouve")
-    }
+
+casper.waitForSelector('a.ui-state-default', function(){
+    this.wait(1000, function() {
+        console.log('capture calendar');
+        this.capture('prefecture.png', {
+            top: 100,
+            left: 100,
+            width: 1200,
+            height: 800
+        });
+    });
+}, function () {
+    console.log('timeout');
 });
+
+casper.then(function() {
+    this.click('a.ui-state-default');
+    this.wait(1000, function() {
+        console.log('capture clicked');
+        this.capture('clicked.png', {
+            top: 100,
+            left: 100,
+            width: 1200,
+            height: 800
+        });
+    });
+});
+
+casper.then(function(){
+    this.evaluate(function() {
+        document.querySelector('select#hourValueSelect').selectedIndex = 1; //it is obvious
+        disableButtons();onHourChanged();
+    });
+});
+
+casper.waitForSelector('.availabilityColumnX', function () {
+    this.click('input[type="radio"]');
+    console.log('capture select');
+    this.capture('select.png');
+});
+
+casper.then(function(){
+    this.click(x('//*[@id="nextButtonId"]'));
+})
+
+casper.waitForSelector('.choice_captcha', function () {
+    console.log('capture form');
+    this.capture('form.png');
+
+    console.log('capture captcha');
+    this.captureSelector('captcha.png', '.img_captcha img');
+
+});
+
+
+
+
+casper.run(function(){});
