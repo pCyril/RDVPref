@@ -4,7 +4,6 @@ var casper = require('casper').create({
 
 var x = require('casper').selectXPath;
 
-
 casper.userAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36');
 
 casper.start('https://rdv-etrangers-94.interieur.gouv.fr/eAppointmentpref94/element/jsp/specific/pref94.jsp' ,function(){
@@ -18,11 +17,30 @@ casper.waitForSelector('form.form-horizontal', function() {
 });
 
 casper.then(function(){
-   this.click(x('//*[@id="pane3"]/div[2]/div/div[3]/div[2]/div[1]/input'));
+   this.click(x('//*[@id="pane3"]/div[2]/div/div[1]/div[3]/div[1]/input'));
 })
 
 casper.then(function(){
    this.click(x('//*[@id="nextButtonId"]'));
+})
+
+//boucler tant qu'on a la popin alert
+
+casper.then(function(){
+    // je dois trouver le path de l'alert
+    while(this.exists(/*xpath de la popin "aucun rdv disponible"*/))
+    {
+        // click sur le ok pour fermer l'alert
+        this.click(x(/*Xpath du bouton ok pour fermer la popin*/));
+        // click sur continuer 
+        this.click(x('//*[@id="nextButtonId"]'));
+    }
+})
+
+casper.then(function(){
+    while(this.exists('a.ui-state-default')){
+        
+    }
 })
 
 casper.then(function(){
@@ -43,6 +61,7 @@ casper.waitForSelector('a.ui-state-default', function(){
     });
 }, function () {
     console.log('timeout');
+    this.exit();
 });
 
 casper.then(function() {
@@ -61,7 +80,8 @@ casper.then(function() {
 casper.then(function(){
     this.evaluate(function() {
         document.querySelector('select#hourValueSelect').selectedIndex = 1; //it is obvious
-        disableButtons();onHourChanged();
+        disableButtons();
+        onHourChanged();
     });
 });
 
@@ -83,8 +103,5 @@ casper.waitForSelector('.choice_captcha', function () {
     this.captureSelector('captcha.png', '.img_captcha img');
 
 });
-
-
-
 
 casper.run(function(){});
