@@ -42,12 +42,16 @@ function repeatScript(){
 }
 
 function nextStep(){
-    casper.then(function(){
-        while(this.exists('a.ui-state-default')){
-            
+
+    casper.on('remote.message', function(msg) {
+        console.log('msg', msg);
+        if (msg.indexOf('Request ID') === 0) {
+
+        } else if (msg.indexOf('Result') === 0) {
+
         }
-    })
-    
+    });
+
     casper.then(function(){
         casper.evaluate(function() {
             openJqueryCal(true);
@@ -129,12 +133,18 @@ function nextStep(){
 
                 var xhr = getXMLHttpRequest();
                 xhr.open("POST", "https://2captcha.com/in.php", true);
+
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        console.log('Request ID' + xhr.response);
+                    }
+                }
+
                 xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                xhr.send("key="+apiKey+"&body=" + base64);
+                xhr.send("key=" + apiKey + "&body=" + base64);
             }, parameters.api_key, base64_encode('captcha.png'))
         })
     });
-    
 }
 
 function base64_encode(file) {
