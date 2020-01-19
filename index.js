@@ -8,7 +8,7 @@ casper.userAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/53
 
 casper.start('https://rdv-etrangers-94.interieur.gouv.fr/eAppointmentpref94/element/jsp/specific/pref94.jsp' ,function(){
       // attends le charge
-      this.waitForSelector('form[action="javascript:coin()"]');
+    this.waitForSelector('form[action="javascript:coin()"]');
 });
 
 
@@ -17,39 +17,25 @@ casper.waitForSelector('form.form-horizontal', function() {
 });
 
 casper.then(function(){
-   this.click(x('//*[@id="pane3"]/div[2]/div/div[1]/div[3]/div[1]/input'));
+    this.click(x('//*[@id="pane3"]/div[2]/div/div[1]/div[3]/div[1]/input'));
 })
 
 casper.then(function(){
-   this.click(x('//*[@id="nextButtonId"]'));
+    repeatScript();
 })
 
-
-
-//boucler tant qu'on a la popin alert
-// casper.waitForAlert('remote.alert', 
-//     function(message) 
-//     { this.echo('alert message: ' + message);
-// });
-
-// casper.then(function(){
-//     // je dois trouver le path de l'alert
-//     while(this.exists(/*xpath de la popin "aucun rdv disponible"*/))
-//     {
-//         // click sur le ok pour fermer l'alert
-//         this.click(x(/*Xpath du bouton ok pour fermer la popin*/));
-//         // click sur continuer 
-//         this.click(x('//*[@id="nextButtonId"]'));
-//     }
-// })
-
 function repeatScript(){
+    casper.click(x('//*[@id="nextButtonId"]'));
     casper.waitForAlert(function(response) {
-        repeatScript();
-        
+        this.echo(response.data);
+        this.waitForSelector('#nextButtonId', function() {
+            this.wait(500, function() {
+                repeatScript();
+            })
+        })
     },function(){
         nextStep();
-    });
+    },  1000);
 }
 
 function nextStep(){
@@ -121,5 +107,5 @@ function nextStep(){
     });
     
 }
-repeatScript();
+
 casper.run(function(){});
