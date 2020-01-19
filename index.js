@@ -1,7 +1,10 @@
+const parameters = require('./parameters');
+
 var casper = require('casper').create({
    viewportSize: {width: 1280, height: 1000}
 });
 
+var fs = require('fs');
 var x = require('casper').selectXPath;
 
 casper.userAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36');
@@ -100,12 +103,45 @@ function nextStep(){
     casper.waitForSelector('.choice_captcha', function () {
         console.log('capture form');
         this.capture('form.png');
-    
         console.log('capture captcha');
         this.captureSelector('captcha.png', '.img_captcha img');
-    
+        this.wait(300, function() {
+            this.evaluate(function(apiKey, base64) {
+                function getXMLHttpRequest() {
+                    var xhr = null;
+
+                    if (window.XMLHttpRequest || window.ActiveXObject) {
+                        if (window.ActiveXObject) {
+                            try {
+                                xhr = new ActiveXObject("Msxml2.XMLHTTP");
+                            } catch(e) {
+                                xhr = new ActiveXObject("Microsoft.XMLHTTP");
+                            }
+                        } else {
+                            xhr = new XMLHttpRequest();
+                        }
+                    } else {
+                        return null;
+                    }
+
+                    return xhr;
+                }
+
+                var xhr = getXMLHttpRequest();
+                xhr.open("POST", "https://2captcha.com/in.php", true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.send("key="+apiKey+"&body=" + base64);
+            }, parameters.api_key, base64_encode('captcha.png'))
+        })
     });
     
+}
+
+function base64_encode(file) {
+    // read binary data
+    var bitmap = fs.readFileSync(file);
+    // convert binary data to base64 encoded string
+    return new Buffer(bitmap).toString('base64');
 }
 
 casper.run(function(){});
