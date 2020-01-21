@@ -20,7 +20,7 @@ casper.waitForSelector('form.form-horizontal', function() {
 });
 
 casper.then(function(){
-    this.click(x('//*[@id="pane3"]/div[2]/div/div[1]/div[3]/div[1]/input'));
+    this.click(x('//*[@id="pane3"]/div[2]/div/div[3]/div[2]/div[1]/input'));
 })
 
 casper.then(function(){
@@ -109,49 +109,14 @@ function nextStep(){
         this.capture('form.png');
         console.log('capture captcha');
         this.captureSelector('captcha.png', '.img_captcha img');
+        var base64 = this.captureBase64('png', '.img_captcha img');
         this.wait(300, function() {
-            this.evaluate(function(apiKey, base64) {
-                function getXMLHttpRequest() {
-                    var xhr = null;
-
-                    if (window.XMLHttpRequest || window.ActiveXObject) {
-                        if (window.ActiveXObject) {
-                            try {
-                                xhr = new ActiveXObject("Msxml2.XMLHTTP");
-                            } catch(e) {
-                                xhr = new ActiveXObject("Microsoft.XMLHTTP");
-                            }
-                        } else {
-                            xhr = new XMLHttpRequest();
-                        }
-                    } else {
-                        return null;
-                    }
-
-                    return xhr;
-                }
-
-                var xhr = getXMLHttpRequest();
-                xhr.open("POST", "https://2captcha.com/in.php", true);
-
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        console.log('Request ID' + xhr.response);
-                    }
-                }
-
-                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                xhr.send("key=" + apiKey + "&body=" + base64);
-            }, parameters.api_key, base64_encode('captcha.png'))
+            var data = this.evaluate(function(apiKey, base64) {
+                return JSON.parse(__utils__.sendAJAX("https://2captcha.com/in.php", 'POST', {key: apiKey, method: 'base64', body: "data:image/png;base64," + base64}, false, { contentType : "application/x-www-form-urlencoded" }));
+            }, {apiKey: parameters.api_key, base64: base64});
+            console.log('data', data);
         })
     });
-}
-
-function base64_encode(file) {
-    // read binary data
-    var bitmap = fs.readFileSync(file);
-    // convert binary data to base64 encoded string
-    return new Buffer(bitmap).toString('base64');
 }
 
 casper.run(function(){});
