@@ -16,11 +16,13 @@ casper.start('https://rdv-etrangers-94.interieur.gouv.fr/eAppointmentpref94/elem
 
 
 casper.waitForSelector('form.form-horizontal', function() {
-    this.fill('form.form-horizontal', { CP: '94200' }, true);
+    this.fill('form.form-horizontal', { CP: parameters.zipCode }, true);
+}, function () {
+    this.exit();
 });
 
 casper.then(function(){
-    this.click(x('//*[@id="pane3"]/div[2]/div/div[3]/div[2]/div[1]/input'));
+    this.click(x('//*[@id="pane3"]/div[2]/div/div[1]/div[3]/div[1]/input'));
 })
 
 casper.then(function(){
@@ -44,11 +46,9 @@ function repeatScript(){
 function nextStep(){
 
     casper.on('remote.message', function(msg) {
-        console.log('msg', msg);
-        if (msg.indexOf('Request ID') === 0) {
-
-        } else if (msg.indexOf('Result') === 0) {
-
+        if (msg.indexOf('CAPTCHA_RESULT') === 0) {
+            var captcha = msg.replace('CAPTCHA_RESULT|', '');
+            fillForm(captcha);
         }
     });
 
@@ -69,7 +69,6 @@ function nextStep(){
             });
         });
     }, function () {
-        console.log('timeout');
         this.exit();
     });
     
@@ -96,27 +95,49 @@ function nextStep(){
     
     casper.waitForSelector('.availabilityColumnX', function () {
         this.click('input[type="radio"]');
-        console.log('capture select');
-        this.capture('select.png');
+    }, function () {
+        this.exit();
     });
     
     casper.then(function(){
         this.click(x('//*[@id="nextButtonId"]'));
-    })
+    }, function () {
+        this.exit();
+    });
     
     casper.waitForSelector('.choice_captcha', function () {
-        console.log('capture form');
-        this.capture('form.png');
-        console.log('capture captcha');
-        this.captureSelector('captcha.png', '.img_captcha img');
-        var base64 = this.captureBase64('png', '.img_captcha img');
+        var base64 = this.captureBase64('jpeg', '.img_captcha img');
         this.wait(300, function() {
-            var data = this.evaluate(function(apiKey, base64) {
-                return JSON.parse(__utils__.sendAJAX("https://2captcha.com/in.php", 'POST', {key: apiKey, method: 'base64', body: "data:image/png;base64," + base64}, false, { contentType : "application/x-www-form-urlencoded" }));
-            }, {apiKey: parameters.api_key, base64: base64});
-            console.log('data', data);
-        })
+            var data = null;
+            this.then(function() {
+                data = this.evaluate(function(apiKey, base64) {
+                    return __utils__.sendAJAX("https://avis-expert.net/resolve/captcha", 'POST', {key: apiKey, method: 'base64', body: "data:image/jpeg;base64," + base64}, false, { contentType : "application/x-www-form-urlencoded" });
+                }, {apiKey: parameters.api_key, base64: base64});
+            }).then(function() {
+                this.evaluate(function(id) {
+                    var result = null;
+                    var intr = setInterval(function(id) {
+                        var result = __utils__.sendAJAX("https://avis-expert.net/resolved/captcha/" + id, 'GET', null, false);
+
+                        if (result != '') {
+                            //IMPORTANT NE PAS SUPPRIMER CE LOG
+                            console.log('CAPTCHA_RESULT|', result);
+                            clearInterval(intr);
+                        }
+                    }, 1000, id);
+
+                    return result;
+                }, {id: data});
+            })
+        });
+    }, function () {
+        this.exit();
     });
+}
+
+function fillForm(captcha) {
+    casper.fill('form#form2', { userCiv: parameters.civility, userLastName: parameters.lastname, userFirstName: parameters.firstname, userZip: parameters.userZip, userEmail: parameters.email, userPhone: parameters.phone, imgc: captcha}, true)
+    casper.capture('form_filled.png');
 }
 
 casper.run(function(){});

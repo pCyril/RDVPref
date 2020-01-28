@@ -1,5 +1,12 @@
 var parameters = {
     "api_key": "test",
+    "lastname": "Perraud",
+    "firstname": "Cyril",
+    "email": "perraud.cyril@gmail.com",
+    "civility": "MR",
+    "phone": "0123456789",
+    "userZip": "000000",
+    "zipCode": "9400",
 }
 
 module.exports = parameters;
